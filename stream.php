@@ -1,17 +1,48 @@
 <?php
 	/*
-	 * OpenUluh version 0.0.1
+	 * OpenUluh
+	 * Copyright (c) 2012-* ShadowEO / Toxus Communications Systems <dreamcaster23@gmail.com>
+	 * GPG Key ID: AC5EEA2B
 	 *
-	 * Copyright (c) 2012-* ShadowEO / Toxus Communications Systems
-	 * Licensed under the GPLv3
-	 * You are free to modify, distribute or redistribute this code as you please
-	 * so long as the above copyright notice remains intact.
+	 * This program is free software: you can redistribute it and/or modify
+	 * it under the terms of the GNU General Public License as published by
+ 	 * the Free Software Foundation, either version 3 of the License, or
+ 	 * (at your option) any later version.
+ 	 *
+	 * This program is distributed in the hope that it will be useful,
+	 * but WITHOUT ANY WARRANTY; without even the implied warranty of
+	 * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	 * GNU General Public License for more details.
+	 * 
+	 * You should have received a copy of the GNU General Public License
+	 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	 */
+		
+
+	/*
+	 * TODO: Add recursive searching using path in XBMCHelper.class.php if filepath contains smb://
+	 */
+
 		require('libs/XBMCHelper.class.php');
 		$XBMC = new XBMCHelper();
 		$videoInformation = $XBMC->GetEpisodeInformation($_GET['e']);
 		$file = $videoInformation['filePath'];
-
+		$streampath = parse_url($file);
+		if(isset($streampath['scheme']) && $streampath['scheme'] == "smb://")
+		{
+			// We found that the filepath includes smb://, by this we have determined a 
+			// Synchronized XBMC installation and substitute direct paths for searching for the file
+			// In the library.
+			$di = new RecursiveDirectoryIterator($XBMC->XBMCTVLibraryPath);
+			foreach(new RecursiveIteratorIterator($di) as $filename=>$cur)
+			{
+				if($cur->getFilename() == $videoInformation['filename'])
+				{
+					$file = $filename;
+					break;
+				}
+			}
+		}
 		$pathparts = pathinfo($file);
 		$exten = $pathparts['extension'];
 		switch($exten)
@@ -29,8 +60,9 @@
 				} else {
 					$command = "ffmpeg -i $file -vcodec mp4 -acodec aac pipe:1";
 				}
+				ini_set("maximum_execution_time", "0"); /* Let's turn off the time limit for this... This isn't needed for MP4 files since those already do progressive download. This on the other hand... it encodes, buffers, spits out, rinse, lather and repeat */
 				/* Credit for below code to 4poc at https://github.com/4poc/php-live-transcode/blob/master/stream.php */
-				/* -- BEGIN FFmpeg Patch */				
+				/* -- BEGIN FFmpeg Patch */								
 				define('P_STDIN', 0);
 				define('P_STDOUT', 1);
 				define('P_STDERR', 2);					
