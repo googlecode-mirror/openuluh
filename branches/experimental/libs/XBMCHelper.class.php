@@ -1,18 +1,29 @@
 <?php
 	/*
-	 * OpenUluh version 0.0.1
+	 * OpenUluh
+	 * Copyright (c) 2012-* ShadowEO / Toxus Communications Systems <dreamcaster23@gmail.com>
+	 * GPG Key ID: AC5EEA2B
 	 *
-	 * Copyright (c) 2012-* ShadowEO / Toxus Communications Systems
-	 * Licensed under the GPLv3
-	 * You are free to modify, distribute or redistribute this code as you please
-	 * so long as the above copyright notice remains intact.
+	 * This program is free software: you can redistribute it and/or modify
+	 * it under the terms of the GNU General Public License as published by
+ 	 * the Free Software Foundation, either version 3 of the License, or
+ 	 * (at your option) any later version.
+ 	 *
+	 * This program is distributed in the hope that it will be useful,
+	 * but WITHOUT ANY WARRANTY; without even the implied warranty of
+	 * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	 * GNU General Public License for more details.
+	 * 
+	 * You should have received a copy of the GNU General Public License
+	 * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 	 */
 
 	class XBMCHelper
 	{
 		// Change this to point to your XBMC userdata path (For grabbing thumbnails and banners)
 		public $XBMCUserDataPath = '/Users/toxus/Library/Application Support/XBMC/userdata/';
-		
+		public $XBMCTVShowsPath = '/local/path/to/your/TV Shows/'; // If you sync multiple XBMC instances
+		public $pagination_perpage = 3; // Change amount of results
 		// Change these to reflect XBMC's MySQL information.
 		public $mySQLServer = 'localhost:8889';
 		public $mySQLusername = 'root';
@@ -40,9 +51,14 @@
 			$this->mysqlConn = $conn;
 		}
 
-		function RetrieveEpisodesforShow($ShowID)
+		function RetrieveEpisodesforShow($ShowID, $offset = 0)
 		{
-			$query = mysql_query("SELECT * FROM episodeview WHERE idShow = '$ShowID' ORDER BY  `episodeview`.`premiered` DESC;");
+			if($offset != null)
+			{
+				$query = mysql_query("SELECT * FROM `episodeview` WHERE `idShow`=$ShowID ORDER BY `c05` DESC LIMIT $offset, ".$this->pagination_perpage.";");
+			} else {
+				$query = mysql_query("SELECT * FROM  `episodeview` WHERE  `idShow` =$ShowID ORDER BY  `c05` DESC ");
+			}
 			$i = 0;
 			$array = false;			
 			while ($row = mysql_fetch_object($query))
@@ -51,7 +67,7 @@
 				$array[$i]['EpisodeName'] = $row->c00;
 				$array[$i]['EpisodeDesc'] = $row->c01;
 				$array[$i]['SeriesName'] = $row->strTitle;
-				$array[$i]['airdate'] = $row->premiered;
+				$array[$i]['airdate'] = $row->c05;
 				$array[$i]['rating'] = $row->mpaa;
 				$array[$i]['season'] = $row->c12;
 				$array[$i]['episode'] = $row->c13;
@@ -104,9 +120,14 @@
 		
 		
 
-		function RetrieveShowList()
+		function RetrieveShowList($offset = null)
 		{
-			$query = mysql_query("SELECT * FROM tvshow");
+			if($offset != null)
+			{
+				$query = mysql_query("SELECT * FROM tvshow LIMIT $offset, ".$this->pagination_perpage.";");
+			} else {
+				$query = mysql_query("SELECT * FROM tvshow");
+			}
 			$i = 0;
 			while ($row = mysql_fetch_object($query))
 			{
@@ -122,9 +143,14 @@
 			return $array;
 		}
 
-		function SortShowsByChannel($channelName)
+		function SortShowsByChannel($channelName, $offset = null)
 		{
-			$query = mysql_query("SELECT * FROM tvshow WHERE c14 = '".mysql_escape_string($channelName)."';");
+			if($offset != null)
+			{
+				$query = mysql_query("SELECT * FROM tvshow WHERE c14 = '".mysql_escape_string($channelName)."' LIMIT $offset, ".$this->pagination_perpage.";");
+			} else {
+				$query = mysql_query("SELECT * FROM tvshow WHERE c14 = '".mysql_escape_string($channelName)."';");
+			}
 			$i = 0;
 			while ($row = mysql_fetch_object($query))
 			{
@@ -163,9 +189,14 @@
 			return $array;
 		}
 
-		function RetrieveStudioList()
+		function RetrieveStudioList($offset = null)
 		{
-			$query = mysql_query("SELECT * FROM studio;", $this->mysqlConn);
+			if($offset != null)
+			{
+			$query = mysql_query("SELECT * FROM studio LIMIT $offest,".$this->pagination_perpage.";", $this->mysqlConn);
+			} else {
+			$query = mysql_query("SELECT * FROM studio;");
+			}
 			$i = 0;			
 			while($idObject = mysql_fetch_object($query))
 			{
